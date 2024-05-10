@@ -48,10 +48,20 @@ public class QuoteClient {
                 .maxBackoff(Duration.ofSeconds(5))
                 .doAfterRetry(retrySignal -> log.info("RETRY_ATTEMPTED"))
                 // A retry attempt will now be made in the event of any service problems, including 4xx errors
-                .filter(throwable ->
-                        throwable instanceof WebClientResponseException webClientResponseException
-                        && webClientResponseException.getStatusCode().is5xxServerError()
-                        || throwable.getCause() instanceof TimeoutException)
+                .filter(throwable -> {
+                            boolean result = false;
+                            if (throwable instanceof WebClientResponseException webClientResponseException) {
+                                if (webClientResponseException.getStatusCode().is5xxServerError()) {
+                                    log.info("is5xxServerError");
+                                    result = true;
+                                }
+                            } else if (throwable.getCause() instanceof TimeoutException) {
+                                log.info("TimeoutException");
+                                result = true;
+                            }
+                            return result;
+                        }
+                )
                 .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> {
                     log.info("SERVICE_UNAVAILABLE | External Service failed to process after max retries");
                     throw new RuntimeException("SERVICE_UNAVAILABLE");
