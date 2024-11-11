@@ -1,4 +1,4 @@
-package com.colak.springreactivewebclienttutorial.quote.client.service;
+package com.colak.springtutorial.quote.client.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
