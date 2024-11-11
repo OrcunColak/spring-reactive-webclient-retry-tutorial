@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
@@ -34,7 +35,11 @@ public class QuoteClient {
 
                 // We can make use of the retryWhen method for a more dynamic and flexible retry strategy.
                 // We are able to construct a more complex retry logic with this way.
-                .retryWhen(getRetry());
+                .retryWhen(getRetry())
+                .onErrorResume(exception -> {
+                    // Handle error after retries are exhausted
+                    return Mono.just("Fallback data");
+                });
 
         list.add(flux);
         return Flux.merge(list);
@@ -64,7 +69,7 @@ public class QuoteClient {
                 )
                 .onRetryExhaustedThrow((retryBackoffSpec, retrySignal) -> {
                     log.info("SERVICE_UNAVAILABLE | External Service failed to process after max retries");
-                    throw new RuntimeException("SERVICE_UNAVAILABLE");
+                    throw new RuntimeException("SERVICE_UNAVAILABLE : " + retrySignal.failure());
                 });
     }
 
